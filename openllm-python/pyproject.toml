@@ -40,8 +40,8 @@ classifiers = [
 dependencies = [
     "bentoml[io]>=1.2",
     "transformers[torch,tokenizers]>=4.36.0",
-    "openllm-client>=0.4.44",
-    "openllm-core>=0.4.44",
+    "openllm-client>=0.5.0-alpha.1",
+    "openllm-core>=0.5.0-alpha.1",
     "safetensors",
     "optimum>=1.12.0",
     "accelerate",
@@ -144,7 +144,7 @@ root = ".."
 [tool.hatch.metadata]
 allow-direct-references = true
 [tool.hatch.build.targets.wheel]
-only-include = ["src/openllm", "src/openllm_cli"]
+only-include = ["src/openllm", "src/openllm_cli", "src/_openllm_tiny"]
 sources = ["src"]
 [tool.hatch.build.targets.sdist]
 exclude = ["/.git_archival.txt", "tests", "/.python-version-default"]
@@ -163,7 +163,7 @@ dependencies = [
     "types-protobuf",
 ]
 enable-by-default = false
-exclude = ["src/openllm/_service.py", "src/openllm/utils/__init__.py"]
+exclude = ["src/_openllm_tiny/_service.py", "src/openllm/utils/__init__.py"]
 include = [
     "src/openllm/__init__.py",
     "src/openllm/_quantisation.py",

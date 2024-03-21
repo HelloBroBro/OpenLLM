@@ -50,6 +50,12 @@ max_model_len={__max_model_len__}
 gpu_memory_utilization={__gpu_memory_utilization__}
 services_config=orjson.loads(coreutils.getenv('services_config',"""{__services_config__}"""))
 '''
+_DOCKERFILE_TEMPLATE = """\
+{% extends bento_base_template %}
+{% block SETUP_BENTO_BASE_IMAGE %}
+{{ super() }}
+{% endblock %}
+"""
 
 
 class ItemState(enum.Enum):
@@ -285,7 +291,9 @@ def construct_python_options(llm_config, llm_fs):
   from bentoml._internal.bento.build_config import PythonOptions
   from openllm.bundle._package import build_editable
 
-  packages = ['scipy', 'bentoml[tracing]>=1.2', 'openllm[vllm]>0.4']
+  # TODO: Add this line back once 0.5 is out, for now depends on OPENLLM_DEV_BUILD
+  # packages = ['scipy', 'bentoml[tracing]>=1.2.8', 'openllm[vllm]>0.4', 'vllm>=0.3']
+  packages = ['scipy', 'bentoml[tracing]>=1.2.8', 'vllm>=0.3']
   if llm_config['requirements'] is not None:
     packages.extend(llm_config['requirements'])
   built_wheels = [build_editable(llm_fs.getsyspath('/'), p) for p in ('openllm_core', 'openllm_client', 'openllm')]
@@ -458,8 +466,6 @@ def build_command(
           labels=labels,
           models=models,
           envs=[
-            EnvironmentEntry(name=QUIET_ENV_VAR, value=str(openllm.utils.get_quiet_mode())),
-            EnvironmentEntry(name=DEBUG_ENV_VAR, value=str(openllm.utils.get_debug_mode())),
             EnvironmentEntry(name='OPENLLM_CONFIG', value=llm_config.model_dump_json()),
             EnvironmentEntry(name='NVIDIA_DRIVER_CAPABILITIES', value='compute,utility'),
           ],
