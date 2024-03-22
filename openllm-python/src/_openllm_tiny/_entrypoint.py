@@ -3,6 +3,7 @@ from __future__ import annotations
 import os, logging, traceback, pathlib, sys, fs, click, enum, inflection, bentoml, orjson, openllm, openllm_core, platform, typing as t
 from ._helpers import recommended_instance_type
 from openllm_core.utils import (
+  DEBUG,
   DEBUG_ENV_VAR,
   QUIET_ENV_VAR,
   SHOW_CODEGEN,
@@ -46,8 +47,8 @@ quantise=coreutils.getenv('quantize',default='{__model_quantise__}',var=['QUANTI
 serialisation=coreutils.getenv('serialization',default='{__model_serialization__}',var=['SERIALISATION'])
 dtype=coreutils.getenv('dtype', default='{__model_dtype__}', var=['TORCH_DTYPE'])
 trust_remote_code=coreutils.check_bool_env("TRUST_REMOTE_CODE",{__model_trust_remote_code__})
-max_model_len={__max_model_len__}
-gpu_memory_utilization={__gpu_memory_utilization__}
+max_model_len=orjson.loads(coreutils.getenv('max_model_len', default=orjson.dumps({__max_model_len__})))
+gpu_memory_utilization=orjson.loads(coreutils.getenv('gpu_memory_utilization', default=orjson.dumps({__gpu_memory_utilization__}), var=['GPU_MEMORY_UTILISATION']))
 services_config=orjson.loads(coreutils.getenv('services_config',"""{__services_config__}"""))
 '''
 _DOCKERFILE_TEMPLATE = """\
@@ -234,7 +235,6 @@ def start_command(
   """
   import transformers
 
-  from _bentoml_impl.server import serve_http
   from bentoml._internal.service.loader import load
   from bentoml._internal.log import configure_server_logging
 
@@ -269,7 +269,6 @@ def start_command(
     'OPENLLM_CONFIG': llm_config.model_dump_json(),
     'DTYPE': dtype,
     'TRUST_REMOTE_CODE': str(trust_remote_code),
-    'MAX_MODEL_LEN': orjson.dumps(max_model_len).decode(),
     'GPU_MEMORY_UTILIZATION': orjson.dumps(gpu_memory_utilization).decode(),
     'SERVICES_CONFIG': orjson.dumps(
       dict(
@@ -277,14 +276,17 @@ def start_command(
       )
     ).decode(),
   })
+  if max_model_len is not None:
+    os.environ['MAX_MODEL_LEN'] = orjson.dumps(max_model_len)
   if quantize:
     os.environ['QUANTIZE'] = str(quantize)
 
   working_dir = os.path.abspath(os.path.dirname(__file__))
   if sys.path[0] != working_dir:
     sys.path.insert(0, working_dir)
-  load('.', working_dir=working_dir).inject_config()
-  serve_http('.', working_dir=working_dir)
+  load('.', working_dir=working_dir).serve_http(
+    working_dir=working_dir, reload=check_bool_env('RELOAD', default=False), development_mode=DEBUG
+  )
 
 
 def construct_python_options(llm_config, llm_fs):
