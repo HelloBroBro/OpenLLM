@@ -140,7 +140,7 @@ jobs:
         run: >-
           mkdir $PYAPP_REPO && curl -L https://github.com/ofek/pyapp/releases/download/v$PYAPP_VERSION/source.tar.gz | tar --strip-components=1 -xzf - -C $PYAPP_REPO
       - name: Set up Python
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # ratchet:actions/setup-python@v5.0.0
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # ratchet:actions/setup-python@v5.1.0
         with:
           python-version-file: .python-version-default
       - name: Install Hatch
@@ -151,7 +151,7 @@ jobs:
           targets: ${{ matrix.job.target }}
       - name: Set up cross compiling
         if: matrix.job.cross
-        uses: taiki-e/install-action@e4ef34df890c5af6027f55257634401a93b14dc7 # ratchet:taiki-e/install-action@v2.32.9
+        uses: taiki-e/install-action@00a67321d66e038602baf558d366a594a7019ea2 # ratchet:taiki-e/install-action@v2.33.9
         with:
           tool: cross
       - name: Configure cross compiling
@@ -237,7 +237,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # ratchet:actions/checkout@v4.1.1
       - name: Set up Python
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # ratchet:actions/setup-python@v5.0.0
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # ratchet:actions/setup-python@v5.1.0
         with:
           python-version-file: .python-version-default
       - name: Pull latest change
