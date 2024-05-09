@@ -69,6 +69,8 @@ def parse_device_callback(
   # NOTE: --device all is a special case
   if len(el) == 1 and el[0] == 'all':
     return tuple(map(str, openllm.utils.available_devices()))
+  if len(el) == 1 and el[0] == 'gpu':
+    return ('0',)
   return el
 
 
@@ -266,9 +268,7 @@ def start_command(
     'TRUST_REMOTE_CODE': str(trust_remote_code),
     'GPU_MEMORY_UTILIZATION': orjson.dumps(gpu_memory_utilization).decode(),
     'SERVICES_CONFIG': orjson.dumps(
-      dict(
-        resources={'gpu' if device else 'cpu': len(device) if device else 'cpu_count'}, traffic=dict(timeout=timeout)
-      )
+      dict(resources={'gpu' if device else 'cpu': len(device) if device else '1'}, traffic=dict(timeout=timeout))
     ).decode(),
   })
   if max_model_len is not None:
@@ -289,7 +289,7 @@ def construct_python_options(llm_config, llm_fs):
 
   # TODO: Add this line back once 0.5 is out, for now depends on OPENLLM_DEV_BUILD
   # packages = ['scipy', 'bentoml[tracing]>=1.2.8', 'openllm[vllm]>0.4', 'vllm>=0.3']
-  packages = ['scipy', 'bentoml[tracing]>=1.2.8', 'vllm>=0.3']
+  packages = ['scipy', 'bentoml[tracing]>=1.2.8', 'vllm==0.4.2']
   if llm_config['requirements'] is not None:
     packages.extend(llm_config['requirements'])
   built_wheels = [build_editable(llm_fs.getsyspath('/'), p) for p in ('openllm_core', 'openllm_client', 'openllm')]
@@ -426,7 +426,7 @@ def build_command(
     labels = {'library': 'vllm'}
     service_config = dict(
       resources={
-        'gpu' if device else 'cpu': len(device) if device else 'cpu_count',
+        'gpu' if device else 'cpu': len(device) if device else '1',
         'gpu_type': recommended_instance_type(model_id, bentomodel),
       },
       traffic=dict(timeout=timeout),
@@ -461,10 +461,7 @@ def build_command(
           name=bento_tag.name,
           labels=labels,
           models=models,
-          envs=[
-            EnvironmentEntry(name='OPENLLM_CONFIG', value=llm_config.model_dump_json()),
-            EnvironmentEntry(name='NVIDIA_DRIVER_CAPABILITIES', value='compute,utility'),
-          ],
+          envs=[EnvironmentEntry(name='NVIDIA_DRIVER_CAPABILITIES', value='compute,utility')],
           description=f"OpenLLM service for {llm_config['start_name']}",
           include=list(llm_fs.walk.files()),
           exclude=['/venv', '/.venv', '__pycache__/', '*.py[cod]', '*$py.class'],
