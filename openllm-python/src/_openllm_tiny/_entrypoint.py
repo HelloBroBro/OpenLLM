@@ -17,14 +17,8 @@ from openllm_core.utils import (
   get_quiet_mode,
   normalise_model_name,
 )
-from openllm_core._typing_compat import (
-  LiteralQuantise,
-  LiteralSerialisation,
-  LiteralDtype,
-  get_literal_args,
-  TypedDict,
-)
-from openllm_cli import termui
+from openllm_core._typing_compat import LiteralQuantise, LiteralSerialisation, LiteralDtype, get_literal_args
+from . import _termui as termui
 
 if sys.version_info >= (3, 11):
   import tomllib
@@ -356,11 +350,6 @@ def build_sdist(target_path: str, package: t.Literal['openllm', 'openllm-core', 
   return sdist_filename
 
 
-class EnvironmentEntry(TypedDict):
-  name: str
-  value: str
-
-
 @cli.command(name='build', context_settings={'token_normalize_func': inflection.underscore})
 @shared_decorator
 @click.option(
@@ -402,7 +391,7 @@ def build_command(
   trust_remote_code: bool,
   debug: bool,
 ):
-  """Package a given LLM into a servable artefacts.
+  """Package a given LLM into a BentoLLM.
 
   \b
   ```bash
@@ -525,16 +514,11 @@ def build_command(
           models=[ModelSpec.from_item({'tag': str(bentomodel.tag), 'alias': bentomodel.tag.name})]
           if bentomodel is not None
           else [],
-          envs=[
-            EnvironmentEntry(name='NVIDIA_DRIVER_CAPABILITIES', value='compute,utility'),
-            EnvironmentEntry(name='VLLM_VERSION', value='0.4.2'),
-            EnvironmentEntry(name=HF_HUB_DISABLE_PROGRESS_BARS, value='TRUE'),
-          ],
           description=service_readme,
           include=list(llm_fs.walk.files()),
           exclude=['/venv', '/.venv', '__pycache__/', '*.py[cod]', '*$py.class'],
           python=PythonOptions(
-            packages=['scipy', 'bentoml[tracing]>=1.2.16', 'openllm[vllm]'],
+            packages=['scipy', 'bentoml[tracing]>=1.2.16', 'openllm>=0.5'],
             pip_args='--no-color --progress-bar off',
             wheels=[wheel_fs.getsyspath(f"/{i.split('/')[-1]}") for i in built_wheels]
             if all(i for i in built_wheels)

@@ -27,7 +27,7 @@ check_membership() {
   fi
 }
 
-for cmd in gh jq hatch; do
+for cmd in gh jq; do
   if ! command -v "$cmd" @ >&1 >/dev/null; then
     echo "ERROR: $cmd not installed. Aborting..."
     exit 1
@@ -146,8 +146,3 @@ while true; do
   fi
   sleep 10
 done
-
-echo "Sleeping for 7 minutes to allow the release to propagate and PyPI to be published..."
-sleep 420
-echo "Building OpenLLM container for ${RELEASE_TAG}..."
-gh workflow run build.yml -R bentoml/openllm -r "${RELEASE_TAG}"
