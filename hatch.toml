@@ -9,7 +9,6 @@ dependencies = [
     "pre-commit",
     # NOTE: towncrier for changelog
     "towncrier",
-    # NOTE: Using under ./tools/update-optional-dependencies.py
     "tomlkit",
     # NOTE: For fancy PyPI readme
     "hatch-fancy-pypi-readme",
@@ -71,7 +70,6 @@ write-summary-report = "python tools/write-coverage-report.py"
 detached = true
 [envs.ui.scripts]
 server = "openllm start {args:facebook/opt-250m} --working-dir {root:uri} --cors --debug"
-docs = "cd docs && pnpm dev"
 [envs.ci]
 detached = true
 [envs.ci.scripts]

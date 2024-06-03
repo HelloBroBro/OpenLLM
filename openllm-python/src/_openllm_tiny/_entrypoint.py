@@ -105,7 +105,7 @@ def optimization_decorator(fn: t.Callable[..., t.Any]):
       '--quantise',
       '--quantize',
       'quantise',
-      type=str,
+      type=click.Choice(get_literal_args(LiteralQuantise)),
       default=None,
       envvar='QUANTIZE',
       show_envvar=True,
@@ -263,6 +263,7 @@ def start_command(
     'OPENLLM_CONFIG': llm_config.model_dump_json(),
     'DTYPE': dtype,
     'TRUST_REMOTE_CODE': str(trust_remote_code),
+    'VLLM_NO_USAGE_STATS': str(1),
     'GPU_MEMORY_UTILIZATION': orjson.dumps(gpu_memory_utilization).decode(),
     'SERVICES_CONFIG': orjson.dumps(
       # XXX: right now we just enable GPU by default. will revisit this if we decide to support TPU later.
