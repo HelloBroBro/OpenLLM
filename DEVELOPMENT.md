@@ -13,22 +13,13 @@ out to us if you have any question!
   - [Table of Contents](#table-of-contents)
   - [Setting Up Your Development Environment](#setting-up-your-development-environment)
   - [Development Workflow](#development-workflow)
-  - [Using a custom fork](#using-a-custom-fork)
-  - [Writing Tests](#writing-tests)
-  - [Releasing a New Version](#releasing-a-new-version)
+    - [Adding new models](#adding-new-models)
+    - [Adding bentos](#adding-new-models)
+    - [Adding repos](#adding-new-models)
 
 ## Setting Up Your Development Environment
 
 Before you can start developing, you'll need to set up your environment:
-
-> [!IMPORTANT]
-> We recommend using the Python version from `.python-version-default` file within the project root
-> to avoid any version mismatch. You can use [pyenv](https://github.com/pyenv/pyenv) to manage your python version.
-> Note that `bash local.sh` will symlink the python version from `.python-version-default` to `.python-version` in the project root.
-> Therefore any tools that understand `.python-version` will use the correct Python version.
-
-> [!NOTE]
-> When in doubt, set `DEBUG=5` to see all generation debug logs and outputs
 
 1. Ensure you have [Git](https://git-scm.com/), and
    [Python3.8+](https://www.python.org/downloads/) installed.
@@ -53,202 +44,70 @@ Before you can start developing, you'll need to set up your environment:
    git branch --set-upstream-to=upstream/main
    ```
 
-6. Run setup script:
+6. (Optional) Link `.python-version-default` to `.python-version`:
 
    ```bash
-   bash local.sh
-   ```
-
-7. Activate virtualenv:
-
-   ```bash
-   source .venv/bin/activate
+   ln .python-version-default .python-version
    ```
 
 ## Development Workflow
 
-After setting up your environment, here's how you can start contributing:
+There are a few ways to contribute to the repository structure for OpenLLM:
 
-1. Create a new branch for your feature or fix:
+### Adding new models
 
-   ```bash
-   git checkout -b feature/my-feature
-   ```
+1. [recipe.yaml](./recipe.yaml) contains all related-metadata for generating new LLM-based bentos. To add a new LLM, the following structure should be adhere to:
 
-2. Make your changes to the codebase.
-3. Run all formatter and linter with `hatch`:
-
-   ```bash
-   hatch run quality
-   ```
-
-4. Write tests that verify your feature or fix (see
-   [Writing Tests](#writing-tests) below).
-5. Run all tests to ensure your changes haven't broken anything:
-
-   ```bash
-   hatch run tests:python
-   ```
-
-6. Commit your changes:
-
-   ```bash
-   git commit -m "Add my feature"
-   ```
-
-7. Push your changes to your fork:
-
-   ```bash
-   git push origin feature/my-feature
-   ```
-
-8. Submit a Pull Request on GitHub.
-
-## Using a custom fork
-
-If you wish to use a modified version of OpenLLM, install your fork from source
-with `pip install -e` and set `OPENLLM_DEV_BUILD=True`, so that Bentos built
-will include the generated wheels for OpenLLM in the bundle.
-
-## Writing Tests
-
-Good tests are crucial for the stability of our codebase. Always write tests for
-your features and fixes.
-
-We use `pytest` for our tests. Make sure your tests are in the `tests/`
-directory and their filenames start with `test_`.
-
-Run all tests with:
-
-```bash
-hatch run tests:python
+```yaml
+"<model_name>:<model_tag>":
+  project: vllm-chat
+  service_config:
+    name: phi3
+    traffic:
+      timeout: 300
+    resources:
+      gpu: 1
+      gpu_type: nvidia-tesla-l4
+  engine_config:
+    model: microsoft/Phi-3-mini-4k-instruct
+    max_model_len: 4096
+    dtype: half
+  chat_template: phi-3
 ```
 
-Run snapshot testing for model outputs:
+- `<model_name>` represents the type of model to be supported. Currently supports `phi3`, `llama2`, `llama3`, `gemma`
 
-```bash
-hatch run tests:models
-```
+- `<model_tag>` emphasizes the type of model and its related metadata. The convention would include `<model_size>-<model_type>-<precision>[-<quantization>]`
+  For example:
 
-To update the snapshot, do the following:
+  - `microsoft/Phi-3-mini-4k-instruct` should be represented as `3.8b-instruct-fp16`.
+  - `TheBloke/Llama-2-7B-Chat-AWQ` would be `7b-chat-awq-4bit`
 
-```bash
-hatch run tests:snapshot-models
-```
+- `project` would be used as the basis for the generated bento. Currently, most models should use `vllm-chat` as default.
 
-## Working with Git
+- `service_config` entails all BentoML-related [configuration](https://docs.bentoml.com/en/latest/guides/configurations.html) to run this bento.
 
-To filter out most of the generated commits for infrastructure, use
-`--invert-grep` in conjunction with `--grep` to filter out all commits with
-regex `"[generated]"`
+> [!NOTE]
+>
+> We recommend to include the following field for `service_config`:
+>
+> - `name` should be the same as `<model_name>`
+> - `resources` includes the available accelerator that can run this models. See more [here](https://docs.bentoml.com/en/latest/guides/configurations.html#resources)
 
-## Building compiled module
+- `engine_config` are fields to be used for vLLM engine. See more supported arguments in [`AsyncEngineArgs`](https://github.com/vllm-project/vllm/blob/7cd2ebb0251fd1fd0eec5c93dac674603a22eddd/vllm/engine/arg_utils.py#L799). We recommend to always include `model`, `max_model_len`, `dtype` and `trust_remote_code`.
 
-You can run the following to test the behaviour of the compiled module:
+- If the model is a chat model, `chat_template` should be used. Add the appropriate `chat_template` under [chat_template directory](./vllm-chat/chat_templates/) should you decide to do so.
 
-```bash
-hatch run compile
-```
+2. You can then run `BENTOML_HOME=$(openllm repo default)/bentoml/bentos python make.py <model_name>:<model_tag>` to generate the required bentos.
 
-> [!IMPORTANT]
-> This will compiled some performance sensitive modules with mypyc.
-> The compiled `.so` or `.pyd` can be found
-> under `/openllm-python/src/openllm`. If you run into any issue, run `hatch run recompile`
+3. You can then submit a [Pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request) to `openllm` with the recipe changes
 
-## Style
+### Adding bentos
 
-See [STYLE.md](STYLE.md) for our style guide.
+OpenLLM now also manages a [generated bento repository](https://github.com/bentoml/openllm-models/tree/main). If you update and modify and generated bentos, make sure to update the recipe and added the generated bentos under `bentoml/bentos`.
 
-## Working with OpenLLM's CI/CD
+### Adding repos
 
-After you change or update any CI related under `.github`, run `bash tools/lock-actions.sh` to lock the action version.
+If you wish to create a your own managed git repo, you should follow the structure of [bentoml/openllm-models](https://github.com/bentoml/openllm-models/tree/main).
 
-See this [docs](/.github/INFRA.md) for more information on OpenLLM's CI/CD workflow.
-
-## Typing
-
-For all internal functions, it is recommended to provide type hint. For all public function definitions, it is recommended to create a stubs file `.pyi` to separate supported external API to increase code visibility. See [openllm-client's `__init__.pyi`](/openllm-client/src/openllm_client/__init__.pyi) for example.
-
-If an internal helpers or any functions, utilities that is prefixed with `_`, then it is recommended to provide inline annotations. See [STYLE.md](./STYLE.md) to learn more about style and typing philosophy.
-
-If you want to update any mypy configuration, please update the [`./tools/update-mypy.py`](./tools/update-mypy.py)
-
-If you need to update pyright configuration, please update the [`pyrightconfig.json`](./pyrightconfig.json)
-
-## Install from git archive install
-
-```bash
-pip install 'https://github.com/bentoml/OpenLLM/archive/main.tar.gz#subdirectory=openllm-python'
-```
-
-## Releasing a New Version
-
-To release a new version, use `./tools/run-release-action`. It requires `gh`,
-`jq` and `hatch`:
-
-```bash
-./tools/run-release-action --release <major|minor|patch>
-```
-
-Once the tag is release, run [the release for base container](https://github.com/bentoml/OpenLLM/actions/workflows/build.yml)
-to the latest release tag.
-
-> Note that currently this workflow can only be run by the BentoML team.
-
-## Changelog
-
-_modeled after the [attrs](https://github.com/python-attrs/attrs) workflow_
-
-If the change is noteworthy, there needs to be a changelog entry so users can
-learn about it!
-
-To avoid merge conflicts, we use the
-[_Towncrier_](https://pypi.org/project/towncrier) package to manage our
-changelog. _towncrier_ uses independent _Markdown_ files for each pull request –
-so called _news fragments_ – instead of one monolithic changelog file. On
-release, those news fragments are compiled into
-[`CHANGELOG.md`](https://github.com/bentoml/openllm/blob/main/CHANGELOG.md).
-
-You don't need to install _Towncrier_ yourself, you just have to abide by a few
-simple rules:
-
-- For each pull request, add a new file into `changelog.d` with a filename
-  adhering to the `<pr#>.(change|deprecation|breaking|feature).md` schema: For
-  example, `changelog.d/42.change.md` for a non-breaking change that is proposed
-  in pull request #42.
-- As with other docs, please use [semantic newlines] within news fragments.
-- Wrap symbols like modules, functions, or classes into backticks so they are
-  rendered in a `monospace font`.
-- Wrap arguments into asterisks like in docstrings:
-  `Added new argument *an_argument*.`
-- If you mention functions or other callables, add parentheses at the end of
-  their names: `openllm.func()` or `openllm.LLMClass.method()`. This makes the
-  changelog a lot more readable.
-- Prefer simple past tense or constructions with "now". For example:
-
-  - Added `LLM.func()`.
-  - `LLM.func()` now doesn't do X.Y.Z anymore when passed the _foobar_ argument.
-
-- If you want to reference multiple issues, copy the news fragment to another
-  filename. _Towncrier_ will merge all news fragments with identical contents
-  into one entry with multiple links to the respective pull requests.
-
-Example entries:
-
-```md
-Added `LLM.func()`. The feature really _is_ awesome.
-```
-
-or:
-
-```md
-`openllm.utils.func()` now doesn't X.Y.Z anymore when passed the _foobar_
-argument. The bug really _was_ nasty.
-```
-
----
-
-`hatch run changelog` will render the current changelog to the terminal if you
-have any doubts.
-
-[semantic newlines]: https://rhodesmill.org/brandon/2012/one-sentence-per-line/
+To add your custom repo, do `openllm repo add <repo_alias> <git_url>`
