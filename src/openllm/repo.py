@@ -2,6 +2,7 @@ import datetime
 import re
 import shutil
 
+import typing
 import pyaml
 import questionary
 import typer
@@ -14,15 +15,15 @@ UPDATE_INTERVAL = datetime.timedelta(days=3)
 app = OpenLLMTyper(help='manage repos')
 
 
-@app.command()
-def list(verbose: bool = False):
+@app.command(name='list', help='list available repo')
+def list_repo(verbose: bool = False):
   if verbose:
     VERBOSE_LEVEL.set(20)
   config = load_config()
   pyaml.pprint([parse_repo_url(repo, name) for name, repo in config.repos.items()], sort_dicts=False, sort_keys=False)
 
 
-@app.command()
+@app.command(help='remove given repo')
 def remove(name: str):
   config = load_config()
   if name not in config.repos:
@@ -45,7 +46,7 @@ def _complete_alias(repo_name: str):
           f.write(bento.version)
 
 
-@app.command()
+@app.command(help='update default repo')
 def update():
   import dulwich
   import dulwich.errors
@@ -129,7 +130,7 @@ def ensure_repo_updated():
 GIT_REPO_RE = re.compile(r'git\+https://(?P<server>.+)/(?P<owner>.+)/(?P<repo>.+?)(@(?P<branch>.+))?$')
 
 
-def parse_repo_url(repo_url, repo_name=None) -> RepoInfo:
+def parse_repo_url(repo_url: str, repo_name: typing.Optional[str] = None) -> RepoInfo:
   """
   parse the git repo url to server, owner, repo name, branch
   >>> parse_repo_url('git+https://github.com/bentoml/bentovllm@main')
@@ -157,7 +158,7 @@ def parse_repo_url(repo_url, repo_name=None) -> RepoInfo:
   )
 
 
-@app.command()
+@app.command(help='add new repo')
 def add(name: str, repo: str):
   name = name.lower()
   if not name.isidentifier():
@@ -173,6 +174,12 @@ def add(name: str, repo: str):
   config.repos[name] = repo
   save_config(config)
   output(f'Repo {name} added', style='green')
+
+
+@app.command(help='get default repo path')
+def default():
+  output((info := parse_repo_url(load_config().repos['default'], 'default')).path)
+  return info.path
 
 
 if __name__ == '__main__':

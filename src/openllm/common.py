@@ -22,16 +22,16 @@ ERROR_STYLE = 'red'
 SUCCESS_STYLE = 'green'
 
 
-CLLAMA_HOME = pathlib.Path.home() / '.openllm'
-REPO_DIR = CLLAMA_HOME / 'repos'
-TEMP_DIR = CLLAMA_HOME / 'temp'
-VENV_DIR = CLLAMA_HOME / 'venv'
+OPENLLM_HOME = pathlib.Path(os.getenv('OPENLLM_HOME', pathlib.Path.home() / '.openllm'))
+REPO_DIR = OPENLLM_HOME / 'repos'
+TEMP_DIR = OPENLLM_HOME / 'temp'
+VENV_DIR = OPENLLM_HOME / 'venv'
 
 REPO_DIR.mkdir(exist_ok=True, parents=True)
 TEMP_DIR.mkdir(exist_ok=True, parents=True)
 VENV_DIR.mkdir(exist_ok=True, parents=True)
 
-CONFIG_FILE = CLLAMA_HOME / 'config.json'
+CONFIG_FILE = OPENLLM_HOME / 'config.json'
 
 CHECKED = '☆'
 
@@ -48,11 +48,11 @@ class ContextVar(typing.Generic[T]):
       return self._stack[-1]
     return self._default
 
-  def set(self, value):
+  def set(self, value: T):
     self._stack.append(value)
 
   @contextmanager
-  def patch(self, value):
+  def patch(self, value: T):
     self._stack.append(value)
     try:
       yield
@@ -91,7 +91,7 @@ class Config(SimpleNamespace):
     return dict(repos=self.repos, default_repo=self.default_repo)
 
 
-def load_config():
+def load_config() -> Config:
   if CONFIG_FILE.exists():
     try:
       with open(CONFIG_FILE) as f:
@@ -101,7 +101,7 @@ def load_config():
   return Config()
 
 
-def save_config(config):
+def save_config(config: Config) -> None:
   with open(CONFIG_FILE, 'w') as f:
     json.dump(config.tolist(), f, indent=2)
 
