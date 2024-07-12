@@ -1,15 +1,12 @@
 <div align="center">
     <h1 align="center">🦾 OpenLLM: Self-Hosting LLMs Made Easy</h1>
-    <a href="https://pypi.org/project/openllm">
-        <img src="https://img.shields.io/pypi/v/openllm.svg?logo=pypi&label=PyPI&logoColor=gold" alt="pypi_status" />
-    </a><a href="https://results.pre-commit.ci/latest/github/bentoml/OpenLLM/main">
-        <img src="https://results.pre-commit.ci/badge/github/bentoml/OpenLLM/main.svg" alt="pre-commit.ci status" />
-    </a><br><a href="https://twitter.com/bentomlai">
-        <img src="https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow%20Us" alt="Twitter" />
-    </a><a href="https://l.bentoml.com/join-openllm-discord">
-        <img src="https://badgen.net/badge/icon/OpenLLM/7289da?icon=discord&label=Join%20Us" alt="Discord" />
-    </a>
 </div>
+
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202-green.svg)](https://github.com/bentoml/OpenLLM/blob/main/LICENSE)
+[![Releases](https://img.shields.io/pypi/v/openllm.svg?logo=pypi&label=PyPI&logoColor=gold)](https://pypi.org/project/openllm)
+[![CI](https://results.pre-commit.ci/badge/github/bentoml/OpenLLM/main.svg)](https://results.pre-commit.ci/latest/github/bentoml/OpenLLM/main)
+[![X](https://badgen.net/badge/icon/@bentomlai/000000?icon=twitter&label=Follow)](https://twitter.com/bentomlai)
+[![Community](https://badgen.net/badge/icon/Community/562f5d?icon=slack&label=Join)](https://l.bentoml.com/join-slack)
 
 ## Introduction
 
@@ -105,16 +102,17 @@ for chunk in chat_completion:
 
 </details>
 
-<details>
-
-<summary>LangChain</summary>
-
-</details>
 
 <details>
 
 <summary>LlamaIndex</summary>
 
+```python
+from llama_index.llms.openai import OpenAI
+
+llm = OpenAI(api_bese="http://localhost:3000/v1", model="meta-llama/Meta-Llama-3-8B-Instruct", api_key="dummy")
+...
+```
 </details>
 
 ## Chat UI
@@ -187,8 +185,6 @@ Once the deployment is complete, you can run model inference on the BentoCloud c
 
 OpenLLM is actively maintained by the BentoML team. Feel free to reach out and join us in our pursuit to make LLMs more accessible and easy to use 👉 [Join our Slack community!](https://l.bentoml.com/join-slack)
 
-Also, engage with like-minded individuals passionate about LLMs, AI, and more on the [OpenLLM Discord](https://l.bentoml.com/join-openllm-discord)!
-
 ## Contributing
 
 As an open-source project, we welcome contributions of all kinds, such as new features, bug fixes, and documentation. Here are some of the ways to contribute:
@@ -203,6 +199,7 @@ As an open-source project, we welcome contributions of all kinds, such as new fe
 This project uses the following open-source projects:
 
 - [bentoml/bentoml](https://github.com/bentoml/bentoml) for production level model serving
+- [vllm-project/vllm](https://github.com/vllm-project/vllm) for production level LLM backend
 - [blrchen/chatgpt-lite](https://github.com/blrchen/chatgpt-lite) for a fancy Web Chat UI
 - [chujiezheng/chat_templates](https://github.com/chujiezheng/chat_templates)
 - [astral-sh/uv](https://github.com/astral-sh/uv) for blazing fast model requirements installing
