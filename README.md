@@ -8,40 +8,31 @@
 [![X](https://badgen.net/badge/icon/@bentomlai/000000?icon=twitter&label=Follow)](https://twitter.com/bentomlai)
 [![Community](https://badgen.net/badge/icon/Community/562f5d?icon=slack&label=Join)](https://l.bentoml.com/join-slack)
 
-## Introduction
-
 OpenLLM lets developers run any **open-source LLMs** as **OpenAI-compatible API** endpoints with **a single command**.
 
 - 🔬 Build for fast and production usages
-- 🚂 Support a wide range of open-source LLMs including llama3, qwen2, gemma, etc and fine-tuned or quantized versions
-- ⛓️ OpenAI-compatible API, easy to integrate with any openai dependent Apps
-- 💬 Built-in ChatGPT like UI to interact with the LLM directly
+- 🚂 Support llama3, qwen2, gemma, etc, and many **quantized** versions [full list](https://github.com/bentoml/openllm-models)
+- ⛓️ OpenAI-compatible API
+- 💬 Built-in ChatGPT like UI
 - 🔥 Accelerated LLM decoding with state-of-the-art inference backends
-- 🌥️ Optionally deploy to K8S or BentoCloud for an enterprise-grade LLM API service
+- 🌥️ Ready for enterprise-grade cloud deployment (Kubernetes, Docker and BentoCloud)
 
-## Get started
-
-Install OpenLLM with pip. OpenLLM currently supports Python 3.9 and above:
+## Get Started
 
 ```bash
-pip install openllm
-```
-
-One can then run:
-
-```bash
+pip install openllm  # or pip3 install openllm
 openllm hello
 ```
 
-to explore models interactively. It will guide you to run LLMs either locally or in the cloud.
+to explore models interactively. It will guide you to run LLMs locally or deploy to cloud.
 
-https://github.com/bentoml/OpenLLM/assets/5886138/2aa5f9e4-859c-4be8-91b3-91d8a810ef73
+![hello](https://github.com/user-attachments/assets/5af19f23-1b34-4c45-b1e0-a6798b4586d1)
 
 ## Supported models
 
 OpenLLM supports a variety of state-of-the-art LLMs. Here are some of the models supported by OpenLLM, each listed with a commonly used model size.
 
-| Model   | Parameters | Quantinize | Required VRAM | Start a Server                  |
+| Model   | Parameters | Quantinize | Required GPU  | Start a Server                  |
 | ------- | ---------- | ---------- | ------------- | ------------------------------- |
 | Llama 3 | 8B         | -          | 24G           | `openllm serve llama3:8b`       |
 | Llama 3 | 8B         | AWQ 4bit   | 12G           | `openllm serve llama3:8b-4bit`  |
