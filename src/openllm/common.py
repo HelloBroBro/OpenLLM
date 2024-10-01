@@ -12,6 +12,7 @@ import subprocess
 import sys
 import sysconfig
 import typing
+from collections import UserDict
 from contextlib import asynccontextmanager, contextmanager
 from types import SimpleNamespace
 
@@ -104,6 +105,19 @@ def save_config(config: Config) -> None:
         json.dump(config.tolist(), f, indent=2)
 
 
+class EnvVars(UserDict[str, str]):
+    """
+    A dictionary-like object that sorted by key and only keeps the environment variables that have a value.
+    """
+
+    def __init__(self, data: typing.Optional[typing.Mapping[str, str]] = None):
+        super().__init__(data or {})
+        self.data = {k: v for k, v in sorted(self.data.items()) if v}
+
+    def __hash__(self):  # type: ignore
+        return hash(tuple(sorted(self.data.items())))
+
+
 class RepoInfo(SimpleNamespace):
     name: str
     path: pathlib.Path
@@ -140,7 +154,7 @@ class BentoInfo(SimpleNamespace):
         else:
             return f'{self.repo.name}/{self.tag}'
 
-    def __hash__(self):
+    def __hash__(self):  # type: ignore
         return md5(str(self.path))
 
     @property
@@ -231,6 +245,7 @@ class VenvSpec(SimpleNamespace):
     python_version: str
     requirements_txt: str
     name_prefix = ''
+    envs: EnvVars
 
     @functools.cached_property
     def normalized_requirements_txt(self) -> str:
@@ -252,10 +267,18 @@ class VenvSpec(SimpleNamespace):
         dependency_lines.sort()
         return '\n'.join(parameter_lines + dependency_lines).strip()
 
-    def __hash__(self):
+    @functools.cached_property
+    def normalized_envs(self) -> str:
+        """
+        sorted by name
+        """
+        return '\n'.join(f'{k}={v}' for k, v in sorted(self.envs.items(), key=lambda x: x[0]) if not v)
+
+    def __hash__(self):  # type: ignore
         return md5(
             # self.python_version,
-            self.normalized_requirements_txt
+            self.normalized_requirements_txt,
+            str(hash(self.envs)),
         )
 
 
@@ -277,7 +300,7 @@ class DeploymentTarget(SimpleNamespace):
     platform = 'linux'
     accelerators: list[Accelerator]
 
-    def __hash__(self):
+    def __hash__(self):  # type: ignore
         return hash(self.source)
 
     @property

@@ -1,9 +1,10 @@
 import asyncio
 import time
+from typing import Optional
 
 import httpx
 
-from openllm.common import BentoInfo, async_run_command, output, run_command, stream_command_output
+from openllm.common import BentoInfo, EnvVars, async_run_command, output, run_command, stream_command_output
 from openllm.venv import ensure_venv
 
 
@@ -19,25 +20,25 @@ def prep_env_vars(bento: BentoInfo):
         os.environ[key] = value
 
 
-def _get_serve_cmd(bento: BentoInfo, port: int = 3000):
+def _get_serve_cmd(bento: BentoInfo, port: int = 3000) -> tuple[list[str], EnvVars, Optional[str]]:
     cmd = ['bentoml', 'serve', bento.bentoml_tag]
     if port != 3000:
         cmd += ['--port', str(port)]
-    env = {'BENTOML_HOME': f'{bento.repo.path}/bentoml'}
+    env = EnvVars({'BENTOML_HOME': f'{bento.repo.path}/bentoml'})
     return cmd, env, None
 
 
 def serve(bento: BentoInfo, port: int = 3000):
     prep_env_vars(bento)
-    venv = ensure_venv(bento)
     cmd, env, cwd = _get_serve_cmd(bento, port=port)
+    venv = ensure_venv(bento, runtime_envs=env)
     output(f'Access the Chat UI at http://localhost:{port}/chat (or with you IP)')
     run_command(cmd, env=env, cwd=cwd, venv=venv)
 
 
 async def _run_model(bento: BentoInfo, port: int = 3000, timeout: int = 600):
-    venv = ensure_venv(bento)
     cmd, env, cwd = _get_serve_cmd(bento, port)
+    venv = ensure_venv(bento, runtime_envs=env)
     async with async_run_command(cmd, env=env, cwd=cwd, venv=venv, silent=False) as server_proc:
         output(f'Model server started {server_proc.pid}')
 

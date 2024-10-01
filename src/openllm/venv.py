@@ -2,14 +2,16 @@ import functools
 import os
 import pathlib
 import shutil
+from typing import Optional
 
 import typer
+import yaml
 
-from openllm.common import VENV_DIR, VERBOSE_LEVEL, BentoInfo, VenvSpec, output, run_command
+from openllm.common import VENV_DIR, VERBOSE_LEVEL, BentoInfo, EnvVars, VenvSpec, output, run_command
 
 
 @functools.lru_cache
-def _resolve_bento_env_spec(bento: BentoInfo):
+def _resolve_bento_venv_spec(bento: BentoInfo, runtime_envs: Optional[EnvVars] = None) -> VenvSpec:
     ver_file = bento.path / 'env' / 'python' / 'version.txt'
     assert ver_file.exists(), f'cannot find version file in {bento.path}'
 
@@ -19,12 +21,18 @@ def _resolve_bento_env_spec(bento: BentoInfo):
 
     ver = ver_file.read_text().strip()
     reqs = lock_file.read_text().strip()
+    bentofile = bento.path / 'bento.yaml'
+    bento_env_list = yaml.safe_load(bentofile.read_text()).get('envs', [])
+    bento_envs = {e['name']: e.get('value') for e in bento_env_list}
+    envs = {k: runtime_envs.get(k, v) for k, v in bento_envs.items()} if runtime_envs else {}
 
-    return VenvSpec(python_version=ver, requirements_txt=reqs, name_prefix=f"{bento.tag.replace(':', '_')}-1-")
+    return VenvSpec(
+        python_version=ver, requirements_txt=reqs, name_prefix=f"{bento.tag.replace(':', '_')}-1-", envs=EnvVars(envs)
+    )
 
 
-def _ensure_venv(env_spec: VenvSpec) -> pathlib.Path:
-    venv = VENV_DIR / str(hash(env_spec))
+def _ensure_venv(venv_spec: VenvSpec) -> pathlib.Path:
+    venv = VENV_DIR / str(hash(venv_spec))
     if venv.exists() and not (venv / 'DONE').exists():
         shutil.rmtree(venv, ignore_errors=True)
     if not venv.exists():
@@ -36,12 +44,14 @@ def _ensure_venv(env_spec: VenvSpec) -> pathlib.Path:
             run_command(
                 ['python', '-m', 'uv', 'pip', 'install', '-p', str(venv_py), 'bentoml'],
                 silent=VERBOSE_LEVEL.get() < 10,
+                env=venv_spec.envs,
             )
             with open(venv / 'requirements.txt', 'w') as f:
-                f.write(env_spec.normalized_requirements_txt)
+                f.write(venv_spec.normalized_requirements_txt)
             run_command(
                 ['python', '-m', 'uv', 'pip', 'install', '-p', str(venv_py), '-r', venv / 'requirements.txt'],
                 silent=VERBOSE_LEVEL.get() < 10,
+                env=venv_spec.envs,
             )
             with open(venv / 'DONE', 'w') as f:
                 f.write('DONE')
@@ -57,16 +67,16 @@ def _ensure_venv(env_spec: VenvSpec) -> pathlib.Path:
         return venv
 
 
-def ensure_venv(bento: BentoInfo) -> pathlib.Path:
-    env_spec = _resolve_bento_env_spec(bento)
-    venv = _ensure_venv(env_spec)
+def ensure_venv(bento: BentoInfo, runtime_envs: Optional[EnvVars] = None) -> pathlib.Path:
+    venv_spec = _resolve_bento_venv_spec(bento, runtime_envs=EnvVars(runtime_envs))
+    venv = _ensure_venv(venv_spec)
     assert venv is not None
     return venv
 
 
 def check_venv(bento: BentoInfo) -> bool:
-    env_spec = _resolve_bento_env_spec(bento)
-    venv = VENV_DIR / str(hash(env_spec))
+    venv_spec = _resolve_bento_venv_spec(bento)
+    venv = VENV_DIR / str(hash(venv_spec))
     if not venv.exists():
         return False
     if venv.exists() and not (venv / 'DONE').exists():

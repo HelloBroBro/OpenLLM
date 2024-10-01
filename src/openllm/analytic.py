@@ -42,7 +42,7 @@ class OpenllmCliEvent(CliEvent):
 
 
 class OrderedCommands(typer.core.TyperGroup):
-    def list_commands(self, _: click.Context) -> typing.Iterable[str]:
+    def list_commands(self, _: click.Context) -> typing.Iterable[str]:  # type: ignore
         return list(self.commands)
 
 

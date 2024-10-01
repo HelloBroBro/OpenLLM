@@ -30,7 +30,7 @@ class Resource(SimpleNamespace):
     gpu: int = 0
     gpu_type: str = ''
 
-    def __hash__(self):
+    def __hash__(self):  # type: ignore
         return hash((self.cpu, self.memory, self.gpu, self.gpu_type))
 
     def __bool__(self):
