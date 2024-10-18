@@ -23,6 +23,7 @@ ERROR_STYLE = 'red'
 SUCCESS_STYLE = 'green'
 
 OPENLLM_HOME = pathlib.Path(os.getenv('OPENLLM_HOME', pathlib.Path.home() / '.openllm'))
+
 REPO_DIR = OPENLLM_HOME / 'repos'
 TEMP_DIR = OPENLLM_HOME / 'temp'
 VENV_DIR = OPENLLM_HOME / 'venv'
@@ -278,7 +279,7 @@ class VenvSpec(SimpleNamespace):
         return md5(
             # self.python_version,
             self.normalized_requirements_txt,
-            str(hash(self.envs)),
+            str(hash(self.normalized_envs)),
         )
 
 
